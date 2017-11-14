@@ -4,9 +4,30 @@
 #include <click/timer.hh>
 #include <click/hashtable.hh>
 #include <click/packet.hh>
+#include <vector>
+#include <set>
 enum State {STABLE, MOVING};
 #define MAX_ROUTER_NUM 255
 typedef int Graph[MAX_ROUTER_NUM][MAX_ROUTER_NUM];	
+
+class Node
+{
+	public:
+		int id;
+		vector<int> next;
+	public:
+		addEdge(int nextAddr);
+};
+class Graph
+{
+	public:
+		vector<Node> nodes;
+	public:
+		void addEdge(int addr1,int addr2)
+		{
+		}
+
+};
 
 CLICK_DECLS
 
@@ -30,10 +51,12 @@ class SimpleRouter : public Element{
 		static const uint16_t DEFAULT_HELLO_TIMEVAL	= 3;
 	private:
 		void dijkstra();
-		void broadCast(WritablePacket *);
+		void updateGraph(Packet *p);
+		void broadCast(WritablePacket *i,int withoutPort=-1);
 		bool updateNeigh(int addr,bool operation);
 			//true => add ; false => remove
 			//return false if addr already exists...
+		int getNextDst(int addr);
 	private:
 		uint32_t _myip;						//local ip addr
 		HashTable<int,int> _routing_table;	//address -> port

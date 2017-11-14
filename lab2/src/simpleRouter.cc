@@ -38,10 +38,11 @@ int SimpleRouter::configure(Vector<String> &conf, ErrorHandler *errh) {
 	return 0;
 }
 
-void SimpleRouter::broadCast(WritablePacket * packet)
+void SimpleRouter::broadCast(WritablePacket * packet,int withoutPort=-1)
 {
 	for(int i=0;i<noutputs();i++)
 	{
+		if(i==withoutPort) continue;
 		if(port_active(true,i)){
 			click_chatter("broadcasting the existence of the router whose ip address is %s\n",inet_ntoa(in_addr(_myip)));
 			output(i).push(packet);
@@ -120,6 +121,12 @@ int SimpleRouter::push(int port, Packet *packet)
 		click_chatter("%s router received an LSP packet from %s",inet_ntoa(_myip),inet_ntoa(oldhdr->srcip));
 		ack=make_packet(_myip,oldhdr->srcip,sizeof(Pkthdr),2,0,oldhdr->seq,ACK,0,ACK | LSP,NULL);
 		output(port).push(ack);
+		auto tt=_latest_lsp.find(oldhdr->srcip);
+		if(tt==_latest_lsp.end()) _latest_lsp.set(oldhdr->srcip,oldhdr->seq);
+		if(tt->second>oldhdr->srcip)
+		{
+			goto DISCARD_LSP_LABEL;
+		}
 		for(int i=0;i<noutputs();i++)
 		{
 			if(i==port) continue;
@@ -129,6 +136,8 @@ int SimpleRouter::push(int port, Packet *packet)
 			}
 		}
 		updateNeigh(oldhdr->srcip,true);
+		updateGraph(packet);
+DISCARD_LSP_LABEL:
 		packet->kill();
 	}
 	else	//data packet
@@ -139,15 +148,43 @@ int SimpleRouter::push(int port, Packet *packet)
 			packet->kill();
 		}
 		oldhdr->ttl--;
-		if(oldhdr->dstip == SimpleRouter::BROADCAST_IP)
+		int nextPort=getNextDst(oldhdr->dstip);
+		if(nextPort==-1 || oldhdr->dstip == SimpleRouter::BROADCAST_IP)
 		{
 			click_chatter("%s router get a broadCast packet!");
 			broadCast(packet);
 			return;
 		}
+		output(nextPort).push(packet);
+		
 		//click_chatter("wrong packet type");
 		//packet->kill();
 	}
+}
+
+int SimpleRouter::getNextDst(int addr)
+{
+	if(addr==SimpleRouter::BROADCAST_IP)
+		return -1;
+	if(_routing_table.find(addr)==_routing_table.end()) return -1;
+	return _routing_table[addr];
+}
+
+void SimpleRouter::updateGraph(Packet *p)
+{
+	struct Pkthdr * oldpkt=(struct Pkthdr *)p;
+	int * addr=(int *)(((char *)p)+sizeof(struct Pkthdr));
+	int size=oldpkt->size/sizeof(int);
+	int src=oldpkt->srcip;
+	for(int i=0;i<size;i++)
+	{
+		_g.addEdge(src,addr[i]);
+	}
+
+}
+void SimpleRouter::dijkstra()
+{
+	//TODO: use Graph _g;
 }
 
 CLICK_ENDDECLS
