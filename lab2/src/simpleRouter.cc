@@ -15,6 +15,7 @@ SimpleRouter::SimpleRouter():_timer_lsp(this),_timer_hello(this)
 {
 	_lsp_tval=DEFAULT_LSP_TIMEVAL;
 	_hel_tval=DEFAULT_HELLO_TIMEVAL;
+	_state=MOVING;
 }
 int SimpleRouter::initialize(ErrorHandler *errh)
 {
@@ -24,7 +25,7 @@ int SimpleRouter::initialize(ErrorHandler *errh)
 	_timer_lsp.schedule_after_sec(_lsp_tval);
 }
 
-void SimpleRouter::push(int port, Packet *packet)
+int SimpleRouter::configure(Vector<String> &conf, ErrorHandler *errh) {
 {
 	if (cp_va_kparse(conf, this, errh,
 				"MYIP", cpkP + cpkM, cpUnsigned, &_myip,
@@ -57,6 +58,21 @@ void SimpleRouter::run_timer(Timer * t)
 	}
 	else if(t==&_timer_lsp)
 	{
+		if(_state==STABLE)
+		{
+			click_chatter("no new graph state, skip...!\n");
+			return;	
+		}
+		//routingTable->packet
+		int neigh[_neighbours.size()];
+		memset(neigh,0,sizeof(neigh));
+		int ind=0;
+		for(auto entry : _neighbours)
+		{
+			neigh[ind++]=entry.first;
+		}
+		packet=make_packet(_myip,0,sizeof(Pkthdr)+sizeof(neigh),2,0,++_seq,0,0,0,(char*)(&neigh));
+		broadCast(packet);
 	}
 	else
 	{
