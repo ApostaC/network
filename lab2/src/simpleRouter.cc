@@ -53,16 +53,11 @@ void SimpleRouter::run_timer(Timer * t)
 	WritablePacket *packet;
 	if(t==&_timer_hello)	//broadcast
 	{
-		packet=make_packet(_myip,SimpleRouter::BROADCAST_IP,sizeof(Pkthdr),2,0,_seq,0,0,HELLO,NULL);
+		packet=make_packet(_myip,SimpleRouter::BROADCAST_IP,sizeof(Pkthdr),2,0,++_seq,0,0,HELLO,NULL);
 		broadCast(packet);
 	}
 	else if(t==&_timer_lsp)
 	{
-		if(_state==STABLE)
-		{
-			click_chatter("no new graph state, skip...!\n");
-			return;	
-		}
 		//routingTable->packet
 		int neigh[_neighbours.size()];
 		memset(neigh,0,sizeof(neigh));
@@ -71,7 +66,14 @@ void SimpleRouter::run_timer(Timer * t)
 		{
 			neigh[ind++]=entry.first;
 		}
-		packet=make_packet(_myip,0,sizeof(Pkthdr)+sizeof(neigh),2,0,++_seq,0,0,LSP,(char*)(&neigh));
+		if(_state==STABLE)
+		{
+			packet=make_packet(_myip,0,sizeof(Pkthdr)+sizeof(neigh),2,0,_seq,0,0,LSP,(char*)(&neigh));
+		}else
+		{
+			packet=make_packet(_myip,0,sizeof(Pkthdr)+sizeof(neigh),2,0,++_seq,0,0,LSP,(char*)(&neigh));
+		}
+
 		broadCast(packet);
 	}
 	else
@@ -80,14 +82,72 @@ void SimpleRouter::run_timer(Timer * t)
 	}
 }
 
-
+bool SimpleRouter::updateNeigh(int addr,bool operation)
+{
+	if(operation)
+	{
+		return _neighbours.set(addr,1);
+	}
+	else
+	{
+		_neighbours.erase(addr);
+		return false;
+	}
+}
 
 int SimpleRouter::push(int port, Packet *packet)
 {
 	assert(packet);
 	struct Pkthdr *oldhdr = (struct Pkthdr *)(packet->data());
 	WritablePacket *ack;
-	//in port 0?
+	//is ack?
+	if(oldhdr->flags & ACK)	
+	{
+		//add existence?
+	}
+	else if (oldhdr->flags & HELLO)	// is hello?
+	{
+		click_chatter("%s router received an hello packet from %s",inet_ntoa(_myip),inet_ntoa(oldhdr->srcip));
+		//send ack back...
+		ack=make_packet(_myip,oldhdr->srcip,sizeof(Pkthdr),2,0,oldhdr->seq,ACK,0,ACK | HELLO,NULL);
+		output(port).push(ack);
+		//add existence
+		updateNeigh(oldhdr->srcip,true);
+		packet->kill();
+	}
+	else if (oldhdr->flags & LSP)	// is link state packet?
+	{
+		click_chatter("%s router received an LSP packet from %s",inet_ntoa(_myip),inet_ntoa(oldhdr->srcip));
+		ack=make_packet(_myip,oldhdr->srcip,sizeof(Pkthdr),2,0,oldhdr->seq,ACK,0,ACK | LSP,NULL);
+		output(port).push(ack);
+		for(int i=0;i<noutputs();i++)
+		{
+			if(i==port) continue;
+			if(port_active(true,i)){
+				click_chatter("broadcasting the existence of the router whose ip address is %s\n",inet_ntoa(in_addr(_myip)));
+				output(i).push(packet);
+			}
+		}
+		updateNeigh(oldhdr->srcip,true);
+		packet->kill();
+	}
+	else	//data packet
+	{
+		if(oldhdr->ttl<0)
+		{
+			click_chatter("get a packet which ttl is less than 0, discard!");
+			packet->kill();
+		}
+		oldhdr->ttl--;
+		if(oldhdr->dstip == SimpleRouter::BROADCAST_IP)
+		{
+			click_chatter("%s router get a broadCast packet!");
+			broadCast(packet);
+			return;
+		}
+		//click_chatter("wrong packet type");
+		//packet->kill();
+	}
 }
 
 CLICK_ENDDECLS

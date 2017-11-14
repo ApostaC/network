@@ -31,6 +31,9 @@ class SimpleRouter : public Element{
 	private:
 		void dijkstra();
 		void broadCast(WritablePacket *);
+		bool updateNeigh(int addr,bool operation);
+			//true => add ; false => remove
+			//return false if addr already exists...
 	private:
 		uint32_t _myip;						//local ip addr
 		HashTable<int,int> _routing_table;	//address -> port
