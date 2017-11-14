@@ -8,15 +8,17 @@
 #include <set>
 enum State {STABLE, MOVING};
 #define MAX_ROUTER_NUM 255
-typedef int Graph[MAX_ROUTER_NUM][MAX_ROUTER_NUM];	
 
 class Node
 {
 	public:
 		int id;
-		vector<int> next;
+		set<int> next;
 	public:
-		addEdge(int nextAddr);
+		addEdge(int nextAddr)
+		{
+			
+		}
 };
 class Graph
 {
