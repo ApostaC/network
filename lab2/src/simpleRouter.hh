@@ -20,6 +20,7 @@ class SimpleRouter : public Element{
 
 		int configure(Vector<String> &conf, ErrorHandler *errh);
 		void push(int port, Packet *packet);
+			//PORT 0: ACK
 		int initialize(ErrorHandler*);
 		void run_timer(Timer*);
 

@@ -53,7 +53,7 @@ void SimpleRouter::run_timer(Timer * t)
 	WritablePacket *packet;
 	if(t==&_timer_hello)	//broadcast
 	{
-		packet=make_packet(_myip,SimpleRouter::BROADCAST_IP,sizeof(Pkthdr),2,0,_seq,0,0,0,NULL);
+		packet=make_packet(_myip,SimpleRouter::BROADCAST_IP,sizeof(Pkthdr),2,0,_seq,0,0,HELLO,NULL);
 		broadCast(packet);
 	}
 	else if(t==&_timer_lsp)
@@ -71,7 +71,7 @@ void SimpleRouter::run_timer(Timer * t)
 		{
 			neigh[ind++]=entry.first;
 		}
-		packet=make_packet(_myip,0,sizeof(Pkthdr)+sizeof(neigh),2,0,++_seq,0,0,0,(char*)(&neigh));
+		packet=make_packet(_myip,0,sizeof(Pkthdr)+sizeof(neigh),2,0,++_seq,0,0,LSP,(char*)(&neigh));
 		broadCast(packet);
 	}
 	else
@@ -80,6 +80,15 @@ void SimpleRouter::run_timer(Timer * t)
 	}
 }
 
+
+
+int SimpleRouter::push(int port, Packet *packet)
+{
+	assert(packet);
+	struct Pkthdr *oldhdr = (struct Pkthdr *)(packet->data());
+	WritablePacket *ack;
+	//in port 0?
+}
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(SimpleRouter)
