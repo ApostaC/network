@@ -186,12 +186,13 @@ int dijkstra(struct node_t *pstart, struct node_t * pend)
 	/*Initialize queue*/
 	bool q[MAX_NODE_NUMBER];size_t qsize;
 	bzero(q,sizeof(q));
-	q[pstart->id] = true;
-	qsize=1;
+	for(size_t i=0;i<count;i++) q[i]=true;
+	qsize = count;
 
 	struct edge_t * curr;
 	while(qsize > 0)
 	{
+		fprintf(stderr,"qsize = %ld\n ",qsize);
 		int u = find_min(count,q,dis);	//find min dis in Queue
 		q[u] = false; qsize --;			//remove u from Q
 
