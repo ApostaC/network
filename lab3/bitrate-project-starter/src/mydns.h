@@ -45,9 +45,9 @@ struct DNS_respond_t
 {
 	uint16_t rtype;			//set to 1
 	uint16_t rclass;		//set to 1
-	uint16_t ttl;			//set to 0
+	uint32_t ttl;			//set to 0
 	uint16_t rd_length;		//the length of RDATA
-};
+} __attribute__((packed));
 
 
 /**

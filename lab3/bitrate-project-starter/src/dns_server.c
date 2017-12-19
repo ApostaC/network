@@ -100,43 +100,6 @@ int open_listenfd(char * port, char * ip_addr)
 	return listenfd;
 }
 
-int open_listenfd_bak(char *port,struct sockaddr* ai_addr, size_t addrlen)
-{
-
-	struct addrinfo hints, *listp,*p;
-	int listenfd, optval=1;
-
-	/*GET ADDR*/
-	memset(&hints,0,sizeof(struct addrinfo));
-	hints.ai_socktype = SOCK_DGRAM;
-	hints.ai_family = AF_INET;
-	hints.ai_flags = AI_PASSIVE ;
-	hints.ai_flags = AI_NUMERICSERV;
-	getaddrinfo(NULL,port,&hints,&listp);
-
-	/*Looking for one which an be binded to*/
-	for(p = listp;p;p=p->ai_next)
-	{
-		//get an socket
-		if((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
-			continue;
-
-		//set opt
-		setsockopt(listenfd,SOL_SOCKET,SO_REUSEADDR,
-					(const void*) &optval, sizeof(int));
-
-		//bind
-		if(bind(listenfd, p->ai_addr, p->ai_addrlen) == 0)
-			break;		//bind success
-		close(listenfd);
-	}
-
-	freeaddrinfo(listp);
-	if(!p) return -1;	//no listp
-
-	return listenfd;
-}
-
 
 // IMPLEMENTATION OF ip_getter_t
 
@@ -144,7 +107,7 @@ int open_listenfd_bak(char *port,struct sockaddr* ai_addr, size_t addrlen)
 int is_addr_correct(const char * targetaddr)
 {
 	int ret = strcmp(targetaddr,CORRECT_TARGET);
-	fprintf(stderr,"targetaddr = %s, CORRECT_TARGET = %s, compare result = %d\n",targetaddr,CORRECT_TARGET,ret);
+//	fprintf(stderr,"targetaddr = %s, CORRECT_TARGET = %s, compare result = %d\n",targetaddr,CORRECT_TARGET,ret);
 	return (ret == 0);
 }
 
@@ -395,7 +358,8 @@ int main(int argc, char * argv[])
 				flag=RCODE3_TAG;
 
 			/*FILL RESPOND PACKET*/
-			size_t back_len = fill_response(1, dst+i, ntohs(pheader->ID), res_addrs+i,back_packet,flag);
+			size_t back_len = fill_response(1, (const char **)dst+i, ntohs(pheader->ID), 
+										(const struct in_addr **)res_addrs+i,back_packet,flag);
 			
 			/* SEND RESPOND PACKET BACK*/
 			sendto(listenfd,back_packet,back_len,0,

@@ -111,14 +111,14 @@ size_t fill_request(int req_num, const char * req_addr[], int id, char * payload
 	pheader->ID = htons(id);
 	pheader->tag = htons(REQUEST_TAG);
 	pheader->QDcount = htons(req_num);
-	
+
 	ret += sizeof(struct DNS_header_t);
 	payload += sizeof(struct DNS_header_t);
 
 
 	//Fill body
 	size_t tempsize = 0;
-    struct DNS_request_t *requset_header;	
+	struct DNS_request_t *requset_header;	
 	for(int i=0;i<req_num;i++)
 	{
 		tempsize = addr2dns(req_addr[i], payload);	//FILL QNAME FIELD
@@ -137,8 +137,8 @@ size_t fill_request(int req_num, const char * req_addr[], int id, char * payload
 size_t fill_response(int req_num, const char * req_addrs[], int id, const struct in_addr * res_addrs[], char * payload, int flag)
 {
 	if(req_num < 0 || req_addrs == NULL ||
-		   (res_addrs == NULL && flag == RESPOND_TAG)
-		   || payload == NULL)
+			(res_addrs == NULL && flag == RESPOND_TAG)
+			|| payload == NULL)
 		return 0;
 	size_t ret = 0;
 	// FILL HEADER
@@ -149,36 +149,44 @@ size_t fill_response(int req_num, const char * req_addrs[], int id, const struct
 	pheader->ANcount = htons(req_num);
 	ret += sizeof(struct DNS_header_t);
 	payload += sizeof(struct DNS_header_t);
-	
+
 
 	//FILL BODY
-	if(flag == RESPOND_TAG)
-	{
-		size_t tempsize = 0;
-		struct DNS_respond_t * res_header;
-		for(int i=0;i<req_num;i++)
-		{
-			//fill name
-			tempsize = addr2dns(req_addrs[i],payload);
-			ret+=tempsize; payload+=tempsize;
+	//if(flag == RESPOND_TAG)
 
-			//fill DNS_respond_t
-			res_header = (struct DNS_respond_t *)payload;
-			res_header->rtype = htons(1);
-			res_header->rclass = htons(1);
-			res_header->ttl = 0;
+	size_t tempsize = 0;
+	struct DNS_respond_t * res_header;
+	for(int i=0;i<req_num;i++)
+	{
+		//fill name
+		tempsize = addr2dns(req_addrs[i],payload);
+		ret+=tempsize; payload+=tempsize;
+
+		res_header = (struct DNS_respond_t *)payload;
+		res_header->rtype = htons(1);
+		res_header->rclass = htons(1);
+		res_header->ttl = 0;
+		//fill DNS_respond_t
+		if(flag == RESPOND_TAG)
+		{
 			res_header->rd_length = htons(sizeof(struct in_addr));
 			ret += sizeof(struct DNS_respond_t);
 			payload += sizeof(struct DNS_respond_t);
-
 			//fill RDATA
+			//fprintf(stderr,"res_addr = %x\n",res_addrs[i]->s_addr);
 			//TODO: this line here is not good ...
-			fprintf(stderr,"res_addr = %x\n",res_addrs[i]->s_addr);
 			*(uint32_t*)payload = res_addrs[i]->s_addr;
 			tempsize=sizeof(struct in_addr);
 			ret+=tempsize; payload+=tempsize;
 		}
+		else 
+		{
+			res_header->rd_length = htons(0);
+			ret += sizeof(struct DNS_respond_t);
+			payload += sizeof(struct DNS_respond_t);
+		}
 	}
+
 	return ret;
 }
 
@@ -189,14 +197,14 @@ size_t resolve_request_info(char * payload, char *(*dst)[])
 	struct DNS_header_t *pheader = (struct DNS_header_t *)payload;
 	uint16_t cnt = ntohs(pheader->QDcount);
 	if(cnt == 0) return 0;
-	
+
 	payload += sizeof(struct DNS_header_t);
 	size_t templen=0;
 	for(int i=0;i<cnt;i++)
 	{	
 		(*dst)[i] = (char*)malloc(BUFFER_MAX_SIZE);
 		templen = dns2addr(payload, (*dst)[i]);
-//		fprintf(stdout,"%s\n",(*dst)[i]);
+		//		fprintf(stdout,"%s\n",(*dst)[i]);
 		if(templen == 0)		//parse failed
 			return 0;			//*dst[i] is null or payload is null
 		payload += templen;
@@ -226,7 +234,7 @@ int open_clientfd()
 	if(bind(clientfd, 
 				(struct sockaddr *)&client_ip, 
 				sizeof client_ip
-			) == -1)
+		   ) == -1)
 	{
 		fprintf(stderr,"cannot bind clinet address %s\n",
 				inet_ntoa((client_ip.sin_addr)));
@@ -263,7 +271,7 @@ int init_mydns(const char *dnsIp, unsigned int dnsPort, const char *clientIp)
 	}
 	dns_ip.sin_family = AF_INET;
 	dns_ip.sin_port = dns_port;
-	
+
 	int dp = ntohs(dns_ip.sin_port);
 	int cp = ntohs(client_ip.sin_port);
 	fprintf(stderr,"dns_ip (%s:%d)\n",inet_ntoa(dns_ip.sin_addr),
@@ -308,12 +316,12 @@ size_t resolve_respond_info(char * payload, struct addrinfo ** info)
 		payload+=templen;
 		payload+=sizeof(struct DNS_respond_t);
 
-	
+
 		//get ip_addr
 		psockaddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr));
 		psockaddr->sin_addr = *(struct in_addr *)payload;
 		payload+=sizeof(struct in_addr);
-				
+
 
 		//fill addrinfo
 		curr->ai_addr = (struct sockaddr*)psockaddr;
@@ -328,14 +336,14 @@ size_t resolve_respond_info(char * payload, struct addrinfo ** info)
 }
 
 int resolve(const char *node, const char *service,
-			const struct addrinfo *hints, struct addrinfo **res)
+		const struct addrinfo *hints, struct addrinfo **res)
 {
 	transcation_id++;
 	//INITIALIZE
 	char send_buf[MAX_PACKET_SIZE], recv_buf[MAX_PACKET_SIZE];
 	bzero(send_buf,sizeof(send_buf));
 	bzero(recv_buf,sizeof(recv_buf));
-	
+
 	int client_fd = open_clientfd();
 
 	//SEND_REQUEST
@@ -358,14 +366,17 @@ int resolve(const char *node, const char *service,
 			fprintf(stderr,"recvfrom error in resolve() err = %d\n", err);
 			return -1;
 		}
-		
+
 		size_t temp = resolve_respond_info(recv_buf,&curr); 
 		if(temp == 0) continue;		//parse failed...
 		packnum+=temp;
-		
+
 		//GET THE END OF THE LIST JUST RETURNED
 		listend = curr;
-		while(listend) listend = listend->ai_next;
+		while(listend)
+		{
+			listend = listend->ai_next;
+		}
 
 		//INSERT CURR INTO RES
 		*res = curr;
