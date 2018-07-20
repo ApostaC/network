@@ -1,0 +1,1 @@
+/usr/bin/c++   -std=c++17  -rdynamic CMakeFiles/parser.dir/main.cpp.o  -o parser -lpcap src/libc_src_lib.a src/libcxx_src_lib.a 

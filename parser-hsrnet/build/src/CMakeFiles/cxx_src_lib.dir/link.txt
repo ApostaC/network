@@ -1,0 +1,2 @@
+/usr/bin/ar qc libcxx_src_lib.a  CMakeFiles/cxx_src_lib.dir/utils.cpp.o CMakeFiles/cxx_src_lib.dir/Threadpool.cpp.o
+/usr/bin/ranlib libcxx_src_lib.a
