@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(Analysiser-src)
 
-SET(INCLUDES headers.h Threadpool.hpp utils.h
+SET(INCLUDES headers.h Threadpool.hpp utils.h Buffer.hpp
 	)
 SET(C_SOURCES utils.c 
 	)

@@ -48,7 +48,7 @@ class FixedThreadPool
         bool stop;
 
     public:
-        static FixedThreadPool *GlobalPool;
+//        static FixedThreadPool *GlobalPool;
 };
 
 inline 
