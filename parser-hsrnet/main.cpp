@@ -9,8 +9,8 @@ using TP = Aposta::FixedThreadPool;
 
 void testBuffer()
 {
-    TP pool(2);
     Buffer<int> buf;
+    TP pool(2);
     auto writer = [&buf](){
         int i = 0;
         while(true){
@@ -37,7 +37,7 @@ void testBuffer()
     pool.enqueue(writer);
     pool.enqueue(reader);
 
-    pool.barrier();
+    //pool.barrier();
 
 }
 
@@ -69,4 +69,5 @@ void testSmallDeque()
 int main(int argc, char *argv[])
 {
     testSmallDeque();
+    testBuffer();
 }

@@ -74,6 +74,7 @@ class SmallDeque
         {
             actual_size = cap * 2;
             raw_ptr = new T[actual_size];
+            printf("SmallDeque constructed at %p\n",raw_ptr);
             write_pos = 0;
             read_pos = 0;
         }
@@ -92,7 +93,7 @@ class SmallDeque
         {
             auto pos = _get_position(write_pos);
             //raw_ptr[pos] = t;
-            new (raw_ptr+pos) T(t);
+            new (raw_ptr+pos) T{t};
             ++write_pos;
         }
 
@@ -100,7 +101,7 @@ class SmallDeque
         void emplace_back(ArgTypes ...args)
         {
             auto ptr = raw_ptr + _get_position(write_pos);
-            new (ptr) T(args...);
+            new (ptr) T{args...};
             ++write_pos;
         }
 

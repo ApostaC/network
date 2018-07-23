@@ -7,11 +7,26 @@
 #include <condition_variable>
 #include <iostream>
 
+#include "SmallDeque.hpp"
 template<typename T> class SmallDeque;
 
 template<typename T>
 class Buffer
 {
+    private:
+        static constexpr size_t DEFAULT_STOP_BOUND = 65536;
+        static constexpr size_t DEFAULT_START_BOUND = 4096;
+    public:
+        Buffer() 
+            : stop_bound(DEFAULT_STOP_BOUND),
+            start_bound(DEFAULT_START_BOUND), data(stop_bound)
+        {
+        }
+
+        Buffer(size_t stop_bnd) : stop_bound(stop_bnd), data(stop_bnd)
+        {
+            start_bound = stop_bound/2;
+        }
     public:
         T next();
         void emplace(T && t_);
@@ -24,10 +39,10 @@ class Buffer
         size_t getStartBound(){return this->start_bound;} 
     private:
 
-        size_t stop_bound = 65536;
-        size_t start_bound = 4096;
+        size_t stop_bound = DEFAULT_STOP_BOUND;
+        size_t start_bound = DEFAULT_START_BOUND;
 
-        std::deque<T> data;
+        SmallDeque<T> data;
         
         std::mutex write_mutex;
         std::condition_variable write_cond;
@@ -44,7 +59,7 @@ T Buffer<T>::next()
     T ret{std::move(this->data.front())};
     this->data.pop_front();
     if(this->data.size()<start_bound) 
-        std::cout<<"HERE!! "<<this->data.size()<<std::endl;
+        write_cond.notify_one();
     return ret;
 }
 
@@ -68,6 +83,7 @@ void Buffer<T>::push(const T & t)
         std::cout<<"reach start bound!"<<std::endl;
     }
     this->data.push_back(t);
+    if(this->data.size() > this->start_bound) this->read_cond.notify_one();
 }
 
 
@@ -85,8 +101,8 @@ void Buffer<T>::emplace(T && t)
         this->write_cond.wait(write_lock,
                 [this](){
                     //std::cout<<"val = "<<this->data.size()<<" start_bound = "<<this->start_bound;
-                    return false;
-                    //return this->data.size() < this->start_bound;
+                    //return false;
+                    return this->data.size() == 0;
                 });
 
         std::cout<<"reach start bound!"<<std::endl;
