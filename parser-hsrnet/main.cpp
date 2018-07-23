@@ -1,12 +1,13 @@
 #include <iostream>
 #include <stdio.h>
 #include "src/Threadpool.hpp"
+#include "src/SmallDeque.hpp"
 #include "src/Buffer.hpp"
 
 using namespace std;
 using TP = Aposta::FixedThreadPool;
 
-int main(int argc, char *argv[])
+void testBuffer()
 {
     TP pool(2);
     Buffer<int> buf;
@@ -38,5 +39,34 @@ int main(int argc, char *argv[])
 
     pool.barrier();
 
-    return 0;
+}
+
+void testSmallDeque()
+{
+    struct A
+    {
+        int id;
+        char c;
+        A(int i, char cc):id(i),c(cc){}
+        A() = default;
+        A(A && _) = default;
+        A(const A &) = default;
+    };
+
+    SmallDeque<A> deq(100);
+    for(int i=0;i<10;i++) deq.emplace_back(i,i+'0');
+    for(int i=0;i<10;i++) deq.push_back(A(i,i+'a'));
+    auto s = deq.size();
+    for(size_t i=0;i<s;i++)
+    {
+        A a {std::move(deq.front())};
+        deq.pop_front();
+        std::cout<<a.c<<" "<<a.id<<std::endl; 
+    }
+
+}
+
+int main(int argc, char *argv[])
+{
+    testSmallDeque();
 }

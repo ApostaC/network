@@ -60,7 +60,6 @@ struct stab
 template<typename T>
 class SmallDeque
 {
-    using stab = ::stab<T>;
     public:
         /**
          * front
@@ -70,10 +69,63 @@ class SmallDeque
          * size
          */
 
+        SmallDeque(size_t cap) noexcept 
+            :capacity(cap)
+        {
+            actual_size = cap * 2;
+            raw_ptr = new T[actual_size];
+            write_pos = 0;
+            read_pos = 0;
+        }
+
+        T front()
+        {
+            return raw_ptr[_get_position(read_pos)];
+        }
+
+        void pop_front()
+        {
+            ++read_pos;
+        }
+
+        void push_back(const T &t)
+        {
+            auto pos = _get_position(write_pos);
+            //raw_ptr[pos] = t;
+            new (raw_ptr+pos) T(t);
+            ++write_pos;
+        }
+
+        template<typename... ArgTypes>
+        void emplace_back(ArgTypes ...args)
+        {
+            auto ptr = raw_ptr + _get_position(write_pos);
+            new (ptr) T(args...);
+            ++write_pos;
+        }
+
+        size_t size() const
+        {
+            return write_pos - read_pos;
+        }
+
+        virtual ~SmallDeque()
+        {
+            delete[] raw_ptr;
+        }
+
+
     private:
-        /**
-         * allo:q`
-         */
+        size_t capacity;
+        size_t actual_size;
+        T *raw_ptr;
+
+        size_t write_pos;
+        size_t read_pos;
+
+    private:
+        size_t _get_position(size_t pos){return pos % actual_size;}
+
 };
 
 
