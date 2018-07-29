@@ -1,8 +1,10 @@
 #include <iostream>
+#include <cassert>
 #include <stdio.h>
 #include "src/Threadpool.hpp"
 #include "src/SmallDeque.hpp"
 #include "src/Buffer.hpp"
+#include "src/Reader.h"
 
 using namespace std;
 using TP = Aposta::FixedThreadPool;
@@ -14,7 +16,9 @@ void testBuffer()
     auto writer = [&buf](){
         int i = 0;
         while(true){
-            buf.emplace(i++); 
+            if(i%2)
+                buf.emplace(i++); 
+            else buf.push(i++);
             i%=2000;
         }
     };
@@ -66,8 +70,24 @@ void testSmallDeque()
 
 }
 
+REG_PCAP_READER_NO_PRED("test", 1);
+extern BufferProvider provider;
+void testReader(const char *filename)
+{
+    REG_NEW_BUFFER("test");
+    TP pool(2);
+    auto buf = provider.GetBufferByName("test");
+    assert(buf);
+    int count = 0;
+    auto reader = [&](){
+            while(buf->isRunning()){buf->next();}};
+    pool.enqueue(reader);
+    pool.enqueue(reader_1,filename);
+}
+
 int main(int argc, char *argv[])
 {
-    testSmallDeque();
-    testBuffer();
+    //testSmallDeque();
+    //testBuffer();
+    testReader(argv[1]);
 }

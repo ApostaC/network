@@ -2,11 +2,12 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(Analysiser-src)
 
 SET(INCLUDES headers.h Threadpool.hpp utils.h Buffer.hpp
-             SmallDeque.hpp
+    SmallDeque.hpp PacketInfo.h Reader.h
 	)
 SET(C_SOURCES utils.c 
 	)
-SET(CXX_SOURCES utils.cpp Threadpool.cpp
+SET(CXX_SOURCES utils.cpp Threadpool.cpp PacketInfo.cpp
+        Reader.cpp
 	)
 
 ADD_LIBRARY(c_src_lib STATIC ${C_SOURCES} ${INCLUDES})
