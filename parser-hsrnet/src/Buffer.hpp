@@ -11,6 +11,10 @@
 template<typename T> class SmallDeque;
 
 template<typename T>
+using Collection = SmallDeque<T>;
+//using Collection = std::deque<T>;     // it dosen't work!
+
+template<typename T>
 class Buffer
 {
     private:
@@ -29,7 +33,8 @@ class Buffer
         }
     public:
         T next();
-        void emplace(T && t_);
+        template<typename ...ArgTypes>
+        void emplace(ArgTypes ...args);
         void push(const T & t);
 
         void setStopBound(size_t s){this->stop_bound = s;}
@@ -45,7 +50,7 @@ class Buffer
         size_t stop_bound = DEFAULT_STOP_BOUND;
         size_t start_bound = DEFAULT_START_BOUND;
 
-        SmallDeque<T> data;
+        Collection<T> data;
         
         std::mutex write_mutex;
         std::condition_variable write_cond;
@@ -96,7 +101,8 @@ void Buffer<T>::push(const T & t)
 
 
 template<typename T>
-void Buffer<T>::emplace(T && t)
+template<typename... ArgTypes>
+void Buffer<T>::emplace(ArgTypes ...args)
 {
     /**
      * race condition here!
@@ -111,7 +117,7 @@ void Buffer<T>::emplace(T && t)
 
         std::cout<<"reach start bound!"<<std::endl;
     }
-    this->data.emplace_back(t);
+    this->data.emplace_back(args...);
     if(this->data.size() > this->start_bound) this->read_cond.notify_one();
 }
 #endif

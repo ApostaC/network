@@ -1,7 +1,8 @@
 #include <stdexcept>
 #include "PacketInfo.h"
 
-PacketInfo::PacketInfo(const u_char *pkt)
+PacketInfo::PacketInfo(const u_char *pkt, const struct timeval &v)
+    :time(v)
 {
     memcpy(&eth, pkt, sizeof(Ethernet_t));
     pkt += sizeof(Ethernet_t);

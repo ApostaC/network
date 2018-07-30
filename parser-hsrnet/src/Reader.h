@@ -50,17 +50,14 @@ extern BufferProvider provider;
     void handler##F_NAME(u_char *, const struct pcap_pkthdr *h,\
             const u_char *pkt)                                 \
     {                                                          \
-        static int tot = 0;                                     \
-        tot++;\
         try                                                    \
         {                                                      \
-            PacketInfo p(pkt);                                 \
+            PacketInfo p(pkt,h->ts);                           \
         }catch(...)                                            \
         {                                                      \
-            fprintf(stdout, "get failed: %d\n",tot);            \
             return;                                            \
         }                                                      \
-        provider.GetBufferByName(B_NAME)->emplace(pkt);        \
+        provider.GetBufferByName(B_NAME)->emplace(pkt, h->ts); \
     }                                                          \
 
 
@@ -70,13 +67,13 @@ extern BufferProvider provider;
     {                                                            \
         try                                                      \
         {                                                        \
-            PacketInfo p(pkt);                                   \
+            PacketInfo p(pkt, h->ts);                            \
             if(!PRED(p)) return;                                 \
         }catch(...)                                              \
         {                                                        \
             return;                                              \
         }                                                        \
-        provider.GetBufferByName(B_NAME)->emplace(pkt);          \
+        provider.GetBufferByName(B_NAME)->emplace(pkt, h->ts);   \
     }                                                            \
 
 

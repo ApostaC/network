@@ -17,13 +17,14 @@ class PacketInfo
         bool _isUdp(){return ip.protocol == 17;}
 
     public:
+        struct timeval time;
         Ethernet_t eth;
         Ipv4_t ip;
         Transport_t trans;
         enum TransMode { TCP = 0, UDP = 1} mode;
     public:
         PacketInfo() = default;
-        PacketInfo(const u_char *pkt);
+        PacketInfo(const u_char *pkt, const struct timeval &v);
         PacketInfo(PacketInfo &&) = default;
         PacketInfo(const PacketInfo &) = default;
         //PacketInfo(Ethernet_t *, Ipv4_t *, Transport_t *);
