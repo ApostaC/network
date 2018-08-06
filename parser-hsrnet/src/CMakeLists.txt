@@ -2,7 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(Analysiser-src)
 
 SET(INCLUDES headers.h Threadpool.hpp utils.h Buffer.hpp
-    SmallDeque.hpp PacketInfo.h Reader.h Worker.h
+    SmallDeque.hpp PacketInfo.h Reader.h Worker.h TcpAnal.h
 	)
 SET(C_SOURCES utils.c 
 	)
