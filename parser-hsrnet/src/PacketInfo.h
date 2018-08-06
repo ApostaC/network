@@ -18,10 +18,12 @@ class PacketInfo
 
     public:
         struct timeval time;
+        size_t payload;
         Ethernet_t eth;
         Ipv4_t ip;
         Transport_t trans;
         enum TransMode { TCP = 0, UDP = 1} mode;
+        uint32_t options[10];
     public:
         PacketInfo() = default;
         PacketInfo(const u_char *pkt, const struct timeval &v);
